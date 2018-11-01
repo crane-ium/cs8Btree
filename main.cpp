@@ -23,13 +23,22 @@ int get_rand(const int min, const int max);
 
 int main()
 {
-    btree_node<int>* root = new btree_node<int>(2, true);
+//    btree_node<int>* root = new btree_node<int>(2, false);
+    using btr = BTree<int>;
+    btr bt;
+    int max = 0;
+    int min = 0;
     for(size_t i = 0; i < 100; i++){
-        root->insert(get_rand(-99,99));
-        if(root->maxed())
-            root->reorganize_root(root);
+        int z = get_rand(-99,99);
+        if(z>max)
+            max = z;
+        else if(z<min)
+            min = z;
+        bt.insert(z);
     }
-    root->print(cout, 0);
+    cout << bt << endl;
+    cout << "Size: " << bt.size() << endl;
+    cout << "max: " << max << " min: " << min << endl;
 //    btree_node<tester>* root = new btree_node<tester>();
 //    (*root).insert(tester("a"));
 //    root->insert(tester("b"));
