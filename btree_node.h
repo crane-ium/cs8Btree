@@ -37,7 +37,7 @@ struct btree_node{
     const T& max_data() const{return _data[_data_size-1];}
     const T& min_data() const{return _data[0];}
 
-    void print(ostream& outs, const size_t level, const size_t extra=0) const;
+    void print(ostream& outs, const size_t level, const size_t extra=0, const size_t sl=0) const;
     string data_string() const;
 
     template<typename U> //moves data from one node to another
@@ -126,7 +126,7 @@ template<typename T>
 bool btree_node<T>::insert_all(const T& input, btree_node<T>* node){
     //When inserting, if shifting over to find insert, must shift children too
     if(DEBUG) cout << "Checking dupes\n";
-    if(__dupes && check_dupe(input, _data, _data_size))
+    if(!__dupes && btf::check_dupe(input, _data, _data_size))
         return false; //do not insert if duplicates disallowed and there si dupe
 
     size_t i = _data_size;
@@ -218,32 +218,31 @@ void btree_node<T>::insert_child(btree_node<T>* node){
     swap(node, (*w));
 }
 template<typename T>
-void btree_node<T>::print(ostream& outs, const size_t level, const size_t extra) const{
+void btree_node<T>::print(ostream& outs, const size_t level, const size_t extra, const size_t sl) const{
     //print in reverse preorder
     if(DEBUG) cout << "PRINTING\n";
-    bool print_adjacent = !(bool)(_data_size%2);
+//    bool print_adjacent = !(bool)(_data_size%2);
     string str = this->data_string();
     size_t slength = str.length();
     if(_children[0]==nullptr){
-        for(size_t i = 0; i < level+extra; i++)
+        for(size_t i = 0; i < (level)*10 + sl; i++)
             outs << " "; //how to get setw to set fixed space?
         outs << (*this) << endl;
         return;
     }
     for(size_t i = _data_size; i > _data_size/2; i--){
-        _children[i]->print(outs, level+slength+extra+1);
+        _children[i]->print(outs, level+extra+1);
     }
-    for(size_t i = 0; i < level+extra; i++)
+    for(size_t i = 0; i < (level)*10 + sl; i++)
         outs << " "; //how to get setw to set fixed space?
     outs << (*this);
-    if(print_adjacent)
-        _children[_data_size/2]->print(outs, 0, level+extra+1);
-    else
-        outs << endl;
-    for(int i = (_data_size+1)/2 - 1; i >= 0; i--){
-        _children[i]->print(outs, level+slength+extra+1);
+//    if(print_adjacent)
+//        _children[_data_size/2]->print(outs, 0, level+extra+1, slength);
+//    else
+    outs << endl;
+    for(int i = (_data_size)/2; i >= 0; i--){
+        _children[i]->print(outs, level+extra+1);
     }
-
 }
 template<typename T>
 string btree_node<T>::data_string() const{
@@ -273,7 +272,7 @@ void move_data(btree_node<T>& giver, btree_node<T>& taker
     }
 }
 template<typename T>
-bool check_dupe(const T& item, T* data, const size_t s){
+bool btf::check_dupe(const T& item, T* data, const size_t s){
     for(size_t i = 0; i < s; i++)
         if(data[i]==item)
             return true;
