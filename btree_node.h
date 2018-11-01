@@ -19,12 +19,15 @@ template<typename T>
 struct btree_node{
     //CTOR
     btree_node(size_t min=1, bool dupes=false);
+    //BIG3
+
     //MEMBER FUNCTIONS
     bool insert(const T& input);
     void remove(const T& input); //Remove the target input
     bool find(const T& input);
         //insert_all: insert an input/node pairing
     bool insert_all(const T &input, btree_node<T> *node=nullptr);
+    void fix_excess(btree_node<T>* cnode);
     //insert_left: only needed for when creating new children
 //    bool insert_left(const T& input, btree_node<T> *node=nullptr);
     void squeeze(); //pushes over children pointers to the left
@@ -81,40 +84,40 @@ bool btree_node<T>::insert(const T &input){
         if(DEBUG)
             cout << "Handing off to child\n";
         //Now find which child to give this to
+        // equivalent to first_ge()
         size_t child = btf::get_child(input, _data, _data_size);
         (*_children[child]).insert(input);
         //Then check if your child was overburdened
         if((*_children[child]).maxed()){
             if(DEBUG)
                 cout << "Reorganizing child\n";
-            btree_node<T>* right = new btree_node<T>(_min, __dupes);
-            //move right side of child into new child
-            size_t i;
-//            for(i = 0; i < _min; i++){
-//                swap(c->_data[c->_data_size-1-_min+i])
-//            }
             btree_node<T>* cnode = _children[child];
-            for(i = 0; i < _min; i++){
-                swap(cnode->_data[cnode->_data_size-_min+i]
-                        , right->_data[i]);
-                swap(cnode->_children[cnode->_data_size-_min+i]
-                        , right->_children[i]);
-                swap(cnode->_d_check[cnode->_data_size-_min+i]
-                        , right->_d_check[i]);
-            }
-            swap(cnode->_children[cnode->_data_size], right->_children[i]);
-             cnode->_data_size -= _min;
-            right->_data_size += _min;
-            //move the middle element of child into new home
-            this->insert_all(cnode->_data[cnode->_data_size - 1], right);
-            cnode->_d_check[cnode->_data_size-1]=false;
-            cnode->_data_size--;
+            fix_excess(cnode); //Reorganize children/parent
         }
         return true;
     }
     return insert_all(input);
 }
-
+template<typename T>
+void btree_node<T>::fix_excess(btree_node<T>* cnode){
+    size_t i;
+    btree_node<T>* right = new btree_node<T>(_min, __dupes);
+    for(i = 0; i < _min; i++){
+        swap(cnode->_data[cnode->_data_size-_min+i]
+                , right->_data[i]);
+        swap(cnode->_children[cnode->_data_size-_min+i]
+                , right->_children[i]);
+        swap(cnode->_d_check[cnode->_data_size-_min+i]
+                , right->_d_check[i]);
+    }
+    swap(cnode->_children[cnode->_data_size], right->_children[i]);
+     cnode->_data_size -= _min;
+    right->_data_size += _min;
+    //move the middle element of child into new home
+    this->insert_all(cnode->_data[cnode->_data_size - 1], right);
+    cnode->_d_check[cnode->_data_size-1]=false;
+    cnode->_data_size--;
+}
 template<typename T>
 bool btree_node<T>::maxed() const{
     //returns if itself has a full data array, so a parent can reorganize
@@ -133,10 +136,6 @@ size_t btree_node<T>::total_size() const{
 template<typename T>
 bool btree_node<T>::insert_all(const T& input, btree_node<T>* node){
     //When inserting, if shifting over to find insert, must shift children too
-    if(DEBUG) cout << "Checking dupes\n";
-    if(!__dupes && btf::check_dupe(input, _data, _data_size))
-        return false; //do not insert if duplicates disallowed and there si dupe
-
     size_t i = _data_size;
 //    swap(_data[i], input);
     swap(_children[i+1], node);
@@ -154,7 +153,7 @@ bool btree_node<T>::insert_all(const T& input, btree_node<T>* node){
             swap(_data[_data_size - i - 1], _data[_data_size - i - 2]);
             swap(_d_check[_data_size - i - 1], _d_check[_data_size - i - 2]);
             swap(_children[_data_size - i], _children[_data_size - i - 1]);
-            this->squeeze();
+            this->squeeze(); //this makes this function more general, but not sure this is useful anymore
         }else
             break; //stop swapping, it is now sorted
     }
