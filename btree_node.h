@@ -21,28 +21,27 @@ struct btree_node{
     btree_node(size_t min=1, bool dupes=false);
     //MEMBER FUNCTIONS
     bool insert(const T& input);
-    void remove(const T& input);
+    void remove(const T& input); //Remove the target input
+    bool find(const T& input);
         //insert_all: insert an input/node pairing
     bool insert_all(const T &input, btree_node<T> *node=nullptr);
     //insert_left: only needed for when creating new children
 //    bool insert_left(const T& input, btree_node<T> *node=nullptr);
     void squeeze(); //pushes over children pointers to the left
     void insert_child(btree_node<T> *node);
-    bool check_validity() const; //checks that the node has valid arrays
+//    bool check_validity() const; //checks that the node has valid arrays
     void reorganize_root(btree_node<T>* &root);
 
     bool maxed() const;
     bool dupes() const{return __dupes;}
     size_t size() const{return _data_size;}
-    const T& max_data() const{return _data[_data_size-1];}
-    const T& min_data() const{return _data[0];}
+    size_t total_size() const;
+//    const T& max_data() const{return _data[_data_size-1];}
+//    const T& min_data() const{return _data[0];}
 
     void print(ostream& outs, const size_t level, const size_t extra=0, const size_t sl=0) const;
     string data_string() const;
 
-    template<typename U> //moves data from one node to another
-    friend void move_data(btree_node<U>& giver, btree_node<U>& taker
-                   , const size_t start_i, const size_t end_i);
     template<typename U>
     friend ostream& operator <<(ostream& outs, const btree_node<U>& node);
 private:
@@ -74,8 +73,11 @@ btree_node<T>::btree_node(size_t min, bool dupes)
 
 template<typename T>
 bool btree_node<T>::insert(const T &input){
+    //Zeroeth, check for dupes
+    if(!__dupes && btf::check_dupe(input, _data, _data_size))
+        return false;
     //First, Check if there are children to hand the input to
-    if(_children[0]!=nullptr){
+    if(_children[0]){
         if(DEBUG)
             cout << "Handing off to child\n";
         //Now find which child to give this to
@@ -86,10 +88,8 @@ bool btree_node<T>::insert(const T &input){
             if(DEBUG)
                 cout << "Reorganizing child\n";
             btree_node<T>* right = new btree_node<T>(_min, __dupes);
-            btree_node<T>* c = _children[child];
             //move right side of child into new child
             size_t i;
-            cout << "DSIZE: " << c->_data_size << endl;
 //            for(i = 0; i < _min; i++){
 //                swap(c->_data[c->_data_size-1-_min+i])
 //            }
@@ -121,6 +121,14 @@ bool btree_node<T>::maxed() const{
     if(_data_size > 2*_min)
         return true;
     return false;
+}
+template<typename T>
+size_t btree_node<T>::total_size() const{
+    size_t totes = 0;
+    if(_children[0])
+        for(size_t i = 0; i < _data_size+1; i++)
+            totes += _children[i]->total_size();
+    return totes+size();
 }
 template<typename T>
 bool btree_node<T>::insert_all(const T& input, btree_node<T>* node){
@@ -190,7 +198,6 @@ void btree_node<T>::reorganize_root(btree_node<T>* & root){
     // a new child of the parent. Left node stays stationary
     //FIRST, move __min nodes and __min + 1 children to right
     size_t i;
-    cout << "dsize: " << left->_data_size << endl;
     for(i = 0; i < _min; i++){
         swap(left->_data[_data_size-_min+i], right->_data[i]);
         swap(left->_children[_data_size-_min+i], right->_children[i]);
@@ -223,7 +230,7 @@ void btree_node<T>::print(ostream& outs, const size_t level, const size_t extra,
     if(DEBUG) cout << "PRINTING\n";
 //    bool print_adjacent = !(bool)(_data_size%2);
     string str = this->data_string();
-    size_t slength = str.length();
+//    size_t slength = str.length();
     if(_children[0]==nullptr){
         for(size_t i = 0; i < (level)*10 + sl; i++)
             outs << " "; //how to get setw to set fixed space?
@@ -259,17 +266,6 @@ size_t btf::get_child(const T& input, T *data, const size_t size){
         if(input <= (data[i]))
             return i;
     return size;
-}
-template<typename T>
-void move_data(btree_node<T>& giver, btree_node<T>& taker
-                , const size_t start_i, const size_t end_i){
-    size_t ii;
-    for(ii = start_i; ii < end_i+1; ii++){
-        //find where taker needs to insert it
-        for(size_t i = 0; i < taker._data_size; i++){
-
-        }
-    }
 }
 template<typename T>
 bool btf::check_dupe(const T& item, T* data, const size_t s){
