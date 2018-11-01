@@ -4,11 +4,13 @@
 #ifndef BTREE_NODE_H
 #define BTREE_NODE_H
 
-static const int DEBUG = 3; //1: debug 2: heavy-debug 3: ultra
+static const int DEBUG = 0; //1: debug 2: heavy-debug 3: ultra
 
 #include <vector>
 #include <cstdlib>
+#include <sstream>
 #include <iostream>
+#include <iomanip>
 #include "btree_functions.h"
 
 using namespace std;
@@ -35,13 +37,14 @@ struct btree_node{
     const T& max_data() const{return _data[_data_size-1];}
     const T& min_data() const{return _data[0];}
 
-    void print(ostream& outs, const size_t level) const;
+    void print(ostream& outs, const size_t level, const size_t extra=0) const;
+    string data_string() const;
 
     template<typename U> //moves data from one node to another
     friend void move_data(btree_node<U>& giver, btree_node<U>& taker
                    , const size_t start_i, const size_t end_i);
     template<typename U>
-    friend ostream& operator <<(ostream& outs, btree_node<U>& node);
+    friend ostream& operator <<(ostream& outs, const btree_node<U>& node);
 private:
     size_t _min, _data_size; //datasize should not exceed  2*_min
     T* _data; //data array
@@ -165,7 +168,7 @@ void btree_node<T>::squeeze(){
     }
 }
 template<typename T>
-ostream& operator <<(ostream& outs, btree_node<T>& node){
+ostream& operator <<(ostream& outs, const btree_node<T>& node){
     size_t i;
     outs << "[";
     for(i = 0; i < node._data_size; i++){
@@ -215,8 +218,40 @@ void btree_node<T>::insert_child(btree_node<T>* node){
     swap(node, (*w));
 }
 template<typename T>
-void btree_node<T>::print(ostream& outs, const size_t level) const{
+void btree_node<T>::print(ostream& outs, const size_t level, const size_t extra) const{
     //print in reverse preorder
+    if(DEBUG) cout << "PRINTING\n";
+    bool print_adjacent = !(bool)(_data_size%2);
+    string str = this->data_string();
+    size_t slength = str.length();
+    if(_children[0]==nullptr){
+        for(size_t i = 0; i < level+extra; i++)
+            outs << " "; //how to get setw to set fixed space?
+        outs << (*this) << endl;
+        return;
+    }
+    for(size_t i = _data_size; i > _data_size/2; i--){
+        _children[i]->print(outs, level+slength+extra+1);
+    }
+    for(size_t i = 0; i < level+extra; i++)
+        outs << " "; //how to get setw to set fixed space?
+    outs << (*this);
+    if(print_adjacent)
+        _children[_data_size/2]->print(outs, 0, level+extra+1);
+    else
+        outs << endl;
+    for(int i = (_data_size+1)/2 - 1; i >= 0; i--){
+        _children[i]->print(outs, level+slength+extra+1);
+    }
+
+}
+template<typename T>
+string btree_node<T>::data_string() const{
+    stringstream dstream;
+    dstream << (*this);
+    string dstr = dstream.str();
+
+    return dstr;
 }
 //--------- GENERAL FUNCTIONS ---------
 template<typename T>
