@@ -39,6 +39,16 @@ int main()
     cout << bt << endl;
     cout << "Size: " << bt.size() << endl;
     cout << "max: " << max << " min: " << min << endl;
+    cout << "10 exists? " << bt.exists(10) << " -94 exists?: "
+         << bt.exists(-94) << " 100 exists?: " << bt.exists(100) << endl;
+    btr bt2(bt);
+    bt2.insert(10);
+    btr bt3 = bt2;
+    bt3.insert(-99);
+    cout << bt2 << endl;
+    cout << "Size: " << bt2.size() << endl;
+    cout << bt3 << endl;
+    cout << "Size: " << bt3.size() << endl;
     assert(bt.check_valid());
 //    btree_node<tester>* root = new btree_node<tester>();
 //    (*root).insert(tester("a"));
