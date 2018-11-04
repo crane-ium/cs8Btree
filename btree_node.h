@@ -20,7 +20,9 @@ struct btree_node{
     //CTOR
     btree_node(size_t min=1, bool dupes=false);
     //BIG3
-
+    ~btree_node();
+    btree_node(const btree_node<T>& copy);
+    btree_node<T>& operator =(const btree_node<T>& copy);
     //MEMBER FUNCTIONS
     bool insert(const T& input);
     void remove(const T& input); //Remove the target input
@@ -32,7 +34,7 @@ struct btree_node{
     //insert_left: only needed for when creating new children
 //    bool insert_left(const T& input, btree_node<T> *node=nullptr);
     void squeeze(); //pushes over children pointers to the left
-//    void insert_child(btree_node<T> *node);
+    void insert_child(btree_node<T> *node);
     bool check_validity() const; //checks that the node has valid arrays
     void reorganize_root(btree_node<T>* &root);
 
@@ -74,7 +76,53 @@ btree_node<T>::btree_node(size_t min, bool dupes)
     for(size_t i = 0; i < 2*_min+2; i++)
         _children[i] = nullptr;
 }
+template<typename T>
+btree_node<T>::~btree_node(){
+    delete[] _data;
+    delete[] _d_check;
+    delete[] _children;
+}
+template<typename T>
+btree_node<T>::btree_node(const btree_node<T>& copy){
+    if(DEBUG) cout << "CALLING COPY CTOR on " << copy << endl;;
+    __dupes = copy.__dupes;
+    _min = copy._min;
+    _data_size = copy._data_size;
+    //allocate space first
+    _data = new T[2*_min+1]; //2*min is limit; give it space to hold an extra past threshold
+    _d_check = new bool[2*_min+1];
+    _children = new btree_node<T>*[2*_min+2]; //2*min+1 is limit, extra to hold past threshold
+    //fill the space with copy's data
+    for(size_t i = 0; i < 2*_min+1; i++){
+        _data[i] = copy._data[i];
+        _d_check[i] = copy._d_check[i];
 
+    }
+    if(!copy.is_leaf())
+        for(size_t i = 0; i < 2*_min+2; i++){
+            if(copy._children[i]){ //check that it is not nullptr
+                _children[i] = new btree_node<T>((*copy._children[i])); //recursive call
+            }else
+                _children[i] = nullptr;
+        }
+    else
+        for(size_t i = 0; i < 2*_min+2; i++)
+            _children[i] = nullptr;
+    if(DEBUG) cout << "COPY CTOR DONE FOR " << (*this) << endl;
+}
+template<typename T>
+btree_node<T>& btree_node<T>::operator =(const btree_node<T>& copy){
+    if(this == &copy)
+        return (*this);
+    btree_node<T> temp(copy);
+    swap(__dupes, temp.__dupes);
+    swap(_min, temp._min);
+    swap(_data_size, temp._data_size);
+    swap(_data, temp._data);
+    swap(_children, temp._children);
+    swap(_d_check, temp._d_check);
+    return (*this);
+}
 template<typename T>
 bool btree_node<T>::insert(const T &input){
     //Zeroeth, check for dupes
@@ -98,6 +146,18 @@ bool btree_node<T>::insert(const T &input){
         return true;
     }
     return insert_all(input);
+}
+template<typename T>
+bool btree_node<T>::find(const T& input){
+    //returns whether an input occurence was found using recursion
+    T* d = f_find(_data, _data_size, input);
+    if(d!=nullptr)
+        return true;
+    else if(is_leaf())
+        return false;
+    else{ //check child
+        return _children[first_ge(_data, _data_size, input)]->find(input);
+    }
 }
 template<typename T>
 void btree_node<T>::fix_excess(btree_node<T>* cnode){
@@ -227,7 +287,7 @@ void btree_node<T>::insert_child(btree_node<T>* node){
 template<typename T>
 void btree_node<T>::print(ostream& outs, const size_t level, const size_t extra, const size_t sl) const{
     //print in reverse preorder
-    if(DEBUG) cout << "PRINTING\n";
+//    if(DEBUG) cout << "PRINTING\n";
 //    bool print_adjacent = !(bool)(_data_size%2);
     string str = this->data_string();
 //    size_t slength = str.length();

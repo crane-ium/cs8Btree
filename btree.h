@@ -52,7 +52,23 @@ BTree<T>::BTree(size_t min, bool dupes)
 }
 template<typename T>
 BTree<T>::~BTree(){
-
+    delete __head;
+}
+template<typename T>
+BTree<T>::BTree(const BTree<T>& copy){
+    _min = copy._min;
+    __dupes = copy.__dupes;
+    __head = new btree_node<T>((*copy.__head));
+}
+template<typename T>
+BTree<T>& BTree<T>::operator =(const BTree<T> copy){
+    if(this == &copy)
+        return (*this);
+    BTree<T> temp(copy);
+    swap(this->_min, temp._min);
+    swap(__dupes, temp.__dupes);
+    swap(__head, temp.__head);
+    return (*this);
 }
 
 template<typename T>
@@ -60,6 +76,10 @@ void BTree<T>::insert(const T &input){
     __head->insert(input);
     if(__head->maxed())
         __head->reorganize_root(__head);
+}
+template<typename T>
+bool BTree<T>::exists(const T& input){
+    return __head->find(input);
 }
 template<typename T>
 size_t BTree<T>::size() const{
