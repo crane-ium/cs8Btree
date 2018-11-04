@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <cassert>
 #include "btree_node.h"
 
 using namespace std;
@@ -29,6 +30,8 @@ public:
 
     void cleartree();
     void copy_tree(const BTree<T>& other);
+
+    bool check_valid() const;
 
     //CONST MEMBER FUNCS
     size_t size() const;
@@ -71,6 +74,11 @@ ostream& operator <<(ostream& outs, BTree<T>& bt){
     bt.__head->print(outs, 0);
     return outs;
 }
+template<typename T>
+bool BTree<T>::check_valid() const{
+    return __head->check_validity();
+}
+
 
 
 #endif // BTREE_H

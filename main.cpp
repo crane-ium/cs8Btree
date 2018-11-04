@@ -25,7 +25,7 @@ int main()
 {
 //    btree_node<int>* root = new btree_node<int>(2, false);
     using btr = BTree<int>;
-    btr bt;
+    btr bt(4);
     int max = 0;
     int min = 0;
     for(size_t i = 0; i < 100; i++){
@@ -39,6 +39,7 @@ int main()
     cout << bt << endl;
     cout << "Size: " << bt.size() << endl;
     cout << "max: " << max << " min: " << min << endl;
+    assert(bt.check_valid());
 //    btree_node<tester>* root = new btree_node<tester>();
 //    (*root).insert(tester("a"));
 //    root->insert(tester("b"));

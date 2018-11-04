@@ -1,4 +1,5 @@
 Issues:
+-Set static __head with dynamic min/dupes??
 
 Tests:
 -Test that no data leaks or is lost

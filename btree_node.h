@@ -27,12 +27,13 @@ struct btree_node{
     bool find(const T& input);
         //insert_all: insert an input/node pairing
     bool insert_all(const T &input, btree_node<T> *node=nullptr);
+    bool is_leaf() const{return !(bool)(_children[0]);}
     void fix_excess(btree_node<T>* cnode);
     //insert_left: only needed for when creating new children
 //    bool insert_left(const T& input, btree_node<T> *node=nullptr);
     void squeeze(); //pushes over children pointers to the left
-    void insert_child(btree_node<T> *node);
-//    bool check_validity() const; //checks that the node has valid arrays
+//    void insert_child(btree_node<T> *node);
+    bool check_validity() const; //checks that the node has valid arrays
     void reorganize_root(btree_node<T>* &root);
 
     bool maxed() const;
@@ -257,6 +258,17 @@ string btree_node<T>::data_string() const{
     string dstr = dstream.str();
 
     return dstr;
+}
+template<typename T>
+bool btree_node<T>::check_validity() const{
+    bool flag = true;
+    for(size_t i = 0; i < _data_size; i++)
+        flag *= _d_check[i]; //boolean-and the data_check values;
+    if(!(_children[0]))
+        return flag;
+    for(size_t i = 0; i < _data_size+1; i++)
+        flag *= _children[i]->check_validity(); //recursively call
+    return flag;
 }
 //--------- GENERAL FUNCTIONS ---------
 template<typename T>
