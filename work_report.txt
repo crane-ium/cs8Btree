@@ -1,5 +1,14 @@
 Issues:
 -Set static __head with dynamic min/dupes??
+-Should there be a find function to find an array of duplicates? In the case that
+ duplicates are merely objects that might be equivalent, but hold different data
+-Was trying to delete &_data[i]
+ -Removed because it makes sense that it doesn't work, but what if this
+  were of a pointer type? Then would there be a leak?
+   -No, I don't think so, since i delete[] _data, and it should cover
+    if they were pointers
+
+
 
 Tests:
 -Test that no data leaks or is lost
