@@ -25,8 +25,10 @@ struct btree_node{
     btree_node<T>& operator =(const btree_node<T>& copy);
     //MEMBER FUNCTIONS
     bool insert(const T& input);
-    void remove(const T& input); //Remove the target input
-    bool find(const T& input);
+    bool remove(const T& input); //Remove the target input
+    bool exists(const T& input);
+
+    T* find(const T &input); //same as exists, but returns a ptr instead
         //insert_all: insert an input/node pairing
     bool insert_all(const T &input, btree_node<T> *node=nullptr);
     bool is_leaf() const{return !(bool)(_children[0]);}
@@ -80,7 +82,9 @@ template<typename T>
 btree_node<T>::~btree_node(){
     delete[] _data;
     delete[] _d_check;
-    delete[] _children;
+    for(size_t i = 0; i < 2*_min+2; i++)
+        delete _children[i];
+    if(DEBUG) cout << "Deleted self" << (*this) << endl;
 }
 template<typename T>
 btree_node<T>::btree_node(const btree_node<T>& copy){
@@ -148,7 +152,18 @@ bool btree_node<T>::insert(const T &input){
     return insert_all(input);
 }
 template<typename T>
-bool btree_node<T>::find(const T& input){
+T* btree_node<T>::find(const T& input){
+    T* d = f_find(_data, _data_size, input);
+    if(d!=nullptr)
+        return d;
+    else if(is_leaf())
+        return nullptr;
+    else{ //check child
+        return _children[first_ge(_data, _data_size, input)]->exists(input);
+    }
+}
+template<typename T>
+bool btree_node<T>::exists(const T& input){
     //returns whether an input occurence was found using recursion
     T* d = f_find(_data, _data_size, input);
     if(d!=nullptr)
@@ -156,7 +171,29 @@ bool btree_node<T>::find(const T& input){
     else if(is_leaf())
         return false;
     else{ //check child
-        return _children[first_ge(_data, _data_size, input)]->find(input);
+        return _children[first_ge(_data, _data_size, input)]->exists(input);
+    }
+}
+template<typename T>
+bool btree_node<T>::remove(const T& input){
+    //Deletes a found input, then reorganizes the tree from a parental view
+    T* d = f_find(_data, _data_size, input);
+    if(d){
+        if(is_leaf()){//then you can remove without guilt :)
+            size_t i = first_ge(_data, _data_size, input);
+            _d_check[i] = false;
+            for(;i<_data_size;i++){
+                swap(_data[i],_data[i+1]);
+                swap(_d_check[i], _d_check[i+1]);
+            }
+            delete &_data[i];
+            _data_size--;
+        }
+    }else if(is_leaf()){
+        //Doesn't find the target, then quit
+        return false;
+    }else{
+        return _children[first_ge(_data, _data_size, input)]->remove(input);
     }
 }
 template<typename T>

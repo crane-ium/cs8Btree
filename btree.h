@@ -77,9 +77,23 @@ void BTree<T>::insert(const T &input){
     if(__head->maxed())
         __head->reorganize_root(__head);
 }
+
+template<typename T>
+void BTree<T>::remove(const T& input){
+    __head->remove(input);
+}
+template<typename T>
+void BTree<T>::cleartree(){
+    delete __head;
+    __head = new btree_node<T>(_min, __dupes);
+}
+template<typename T>
+void BTree<T>::copy_tree(const BTree<T>& other){
+    (*this) = other;
+}
 template<typename T>
 bool BTree<T>::exists(const T& input){
-    return __head->find(input);
+    return __head->exists(input);
 }
 template<typename T>
 size_t BTree<T>::size() const{
