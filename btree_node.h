@@ -4,7 +4,7 @@
 #ifndef BTREE_NODE_H
 #define BTREE_NODE_H
 
-static const int DEBUG = 1; //1: debug 2: heavy-debug 3: ultra
+static const int DEBUG = 0; //1: debug 2: heavy-debug 3: ultra
 
 #include <vector>
 #include <cstdlib>
@@ -28,7 +28,6 @@ struct btree_node{
     bool insert(const T& input);
     bool remove(const T& input); //Remove the target input
     bool exists(const T& input);
-
     T* find(const T &input); //same as exists, but returns a ptr instead
         //insert_all: insert an input/node pairing
     bool insert_all(const T &input, btree_node<T> *node=nullptr);
@@ -45,6 +44,8 @@ struct btree_node{
     bool dupes() const{return __dupes;}
     size_t size() const{return _data_size;}
     size_t total_size() const;
+    T& get_highest() const; //return the highest value in tree
+    void get_array(T* arr, size_t &size); //adds _data into arr to return an array
 //    const T& max_data() const{return _data[_data_size-1];}
 //    const T& min_data() const{return _data[0];}
 
@@ -166,7 +167,7 @@ T* btree_node<T>::find(const T& input){
     else if(is_leaf())
         return nullptr;
     else{ //check child
-        return _children[first_ge(_data, _data_size, input)]->exists(input);
+        return _children[first_ge(_data, _data_size, input)]->find(input);
     }
 }
 template<typename T>
@@ -425,7 +426,10 @@ bool btree_node<T>::check_validity() const{
 }
 template<typename T>
 void btree_node<T>::rotate_right(size_t i){
-    assert(_children[i]->_data_size > 1);
+//    assert(_children[i]->_data_size > 1);
+    if(_children[i]->_data_size <= 1){
+        cout << "BIG PROBLEM: CHILD TOO SMALL: " << *_children[i] << endl;
+    }
     //take largest data and move that one
     T d;
     btree_node<T>* left = _children[i];
@@ -436,7 +440,10 @@ void btree_node<T>::rotate_right(size_t i){
 }
 template<typename T>
 void btree_node<T>::rotate_left(size_t i){
-    assert(_children[i]->_data_size > 1);
+//    assert(_children[i]->_data_size > 1);
+    if(_children[i]->_data_size <= 1){
+        cout << "BIG PROBLEM: CHILD TOO SMALL: " << *_children[i] << endl;
+    }
     //take smallest data and move that one
     T d;
     btree_node<T>* right = _children[i];
@@ -460,7 +467,8 @@ bool btree_node<T>::rotate_check(size_t child){
         }
     }
     for(size_t i = 0; child-i>0; i++){
-        cout << child-1-i << endl;
+//        cout << child-1-i << endl;
+
         if(_children[child-1-i]->_data_size>1){
             nearest_left=child-1-i;
             break;
@@ -547,7 +555,31 @@ void btree_node<T>::parent_child_merge(size_t child){
     }
     _data_size--;
 }
-
+template<typename T>
+void btree_node<T>::get_array(T* arr, size_t& size){
+    if(!is_leaf()){
+        for(size_t i = 0; i < _data_size+1; i++){
+            _children[i]->get_array(arr, size);
+            if(i < _data_size){
+                arr[size] = _data[i];
+                size++;
+            }
+        }
+    }
+    if(is_leaf()){
+        for(size_t i = 0; i < _data_size; i++)
+            arr[size+i] = _data[i];
+        size += _data_size;
+    }
+}
+template<typename T>
+T& btree_node<T>::get_highest() const{
+    if(is_leaf()){
+        return _data[_data_size-1];
+    }else{
+        return _children[_data_size]->get_highest();
+    }
+}
 //--------- GENERAL FUNCTIONS ---------
 template<typename T>
 size_t btf::get_child(const T& input, T *data, const size_t size){

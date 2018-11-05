@@ -24,9 +24,13 @@ public:
     void insert(const T& input);
     void remove(const T& input);
     bool exists(const T& input);
+    T* find(const T& input);
 
     T& get(const T& input);
     T* get_ptr(const T& input);
+
+    T* get_array();
+    T& get_highest() const;
 
     void cleartree();
     void copy_tree(const BTree<T>& other);
@@ -112,7 +116,20 @@ template<typename T>
 bool BTree<T>::check_valid() const{
     return __head->check_validity();
 }
-
-
-
+template<typename T>
+T* BTree<T>::get_array(){
+    //returns an array version of the tree
+    T* arr = new T[__head->total_size()];
+    size_t size=0;
+    __head->get_array(arr, size);
+    return arr;
+}
+template<typename T>
+T& BTree<T>::get_highest() const{
+    return __head->get_highest();
+}
+template<typename T>
+T* BTree<T>::find(const T &input){
+    return __head->find(input);
+}
 #endif // BTREE_H
