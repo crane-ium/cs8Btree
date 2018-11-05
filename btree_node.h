@@ -4,13 +4,14 @@
 #ifndef BTREE_NODE_H
 #define BTREE_NODE_H
 
-static const int DEBUG = 0; //1: debug 2: heavy-debug 3: ultra
+static const int DEBUG = 1; //1: debug 2: heavy-debug 3: ultra
 
 #include <vector>
 #include <cstdlib>
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <cassert>
 #include "btree_functions.h"
 
 using namespace std;
@@ -59,6 +60,11 @@ private:
     btree_node<T>** _children; //children pointer array
     bool __dupes;
     //PRIVATE FUNCTIONS
+    void rotate_right(size_t i); //child i gives data to the right
+    void rotate_left(size_t i); //child i gives data to the left
+    bool rotate_check(size_t child);
+    void take_children(size_t child);
+    bool take_greatest(T& greatest); //Removes greatest _data in _children[child] and returns
 };
 namespace btf{
     template<typename T>
@@ -178,22 +184,78 @@ template<typename T>
 bool btree_node<T>::remove(const T& input){
     //Deletes a found input, then reorganizes the tree from a parental view
     T* d = f_find(_data, _data_size, input);
+    if(DEBUG) cout << "Removing " << input << endl;
     if(d){
-        if(is_leaf()){//then you can remove without guilt :)
-            size_t i = first_ge(_data, _data_size, input);
+        //then you can remove without guilt :)
+        size_t i = first_ge(_data, _data_size, input);
+        if(is_leaf()){
             _d_check[i] = false;
             for(;i<_data_size;i++){
                 swap(_data[i],_data[i+1]);
                 swap(_d_check[i], _d_check[i+1]);
             }
-            delete &_data[i];
+            if(DEBUG) cout << "Found and removing " << input << endl;
+            //            delete &_data[i];
             _data_size--;
+            return true;
+        }else{
+            if(DEBUG) cout << "Taking greatest\n";
+            take_greatest(_data[i]);
         }
+
+        return true;
     }else if(is_leaf()){
         //Doesn't find the target, then quit
+        if(DEBUG) cout << "No input to remove\n";
         return false;
     }else{
-        return _children[first_ge(_data, _data_size, input)]->remove(input);
+        size_t child = first_ge(_data, _data_size, input);
+        bool check = _children[child]->remove(input);
+        if(!check)
+            return false;
+        if(DEBUG) cout << "Fixing child after removing " << input << endl;
+        //Now we must check if our child is an empty set
+        if(_children[child]->_data_size == 0){
+            //reorganize!
+            if(_children[child]->is_leaf()){
+                //Check to rotate data to fill the empty child
+                //Find the nearest child with data to spare
+                bool rotated;
+                rotated = rotate_check(child);
+                if(!rotated){
+                    if(DEBUG) cout << "Remove: Merging with parent\n";
+                    //No children can offer. Merge _data[child] with right
+                    if(_data_size > 1){
+                        T d;
+                        if(child < _data_size){
+                            swap(_data[child], d);
+                            for(size_t j = child; j < _data_size; j++)
+                                swap(_data[j], _data[j+1]);
+                            _d_check[_data_size-1] = false;
+                        }else
+                            swap(_data[child-1],d);
+                        _d_check[child]=false;
+                        if(child==_data_size)
+                            _children[child]->insert(d);
+                        else
+                            _children[child+1]->insert(d);
+                        delete _children[child];
+                        _children[child] = nullptr;
+                        for(size_t i = child; i < _data_size+1; i++)
+                            swap(_children[i], _children[i+1]);
+                        _data_size--;
+                    }else{
+                        //We must merge all children into parent
+                        //All children are of size 1
+                        take_children(child);
+                    }
+
+                }
+            }else{
+
+            }
+        }
+        return check;
     }
 }
 template<typename T>
@@ -367,6 +429,104 @@ bool btree_node<T>::check_validity() const{
         flag *= _children[i]->check_validity(); //recursively call
     return flag;
 }
+template<typename T>
+void btree_node<T>::rotate_right(size_t i){
+    assert(_children[i]->_data_size > 1);
+    //take largest data and move that one
+    T d;
+    btree_node<T>* left = _children[i];
+    swap(left->_data[left->_data_size-1], d);
+    left->_data_size--;
+    swap(_data[i], d);
+    _children[i+1]->insert(d);
+}
+template<typename T>
+void btree_node<T>::rotate_left(size_t i){
+    assert(_children[i]->_data_size > 1);
+    //take smallest data and move that one
+    T d;
+    btree_node<T>* right = _children[i];
+    swap(right->_data[0], d);
+    for(size_t j = 0; j < right->_data_size; j++)
+        swap(right->_data[j], right->_data[j+1]);
+    right->_data_size--;
+    swap(_data[i-1], d);
+    _children[i-1]->insert(d);
+}
+template<typename T>
+bool btree_node<T>::rotate_check(size_t child){
+
+    size_t nearest_left=child;
+    size_t nearest_right = child;
+//                cout << "Checking children: " << child << endl;
+    for(size_t i = child+1; i < _data_size+1; i++){
+        if(_children[i]->_data_size>1){
+            nearest_right=i;
+            break;
+        }
+    }
+    for(size_t i = 0; child-i>0; i++){
+        cout << child-1-i << endl;
+        if(_children[child-1-i]->_data_size>1){
+            nearest_left=child-1-i;
+            break;
+        }
+    }
+    if(nearest_left != child){
+//                    cout << "nearest left\n";
+        for(size_t i = nearest_left; i < child; i++)
+            rotate_right(i);
+        return true;
+    }else if(nearest_right != child){
+//                    cout << "nearest right" << nearest_right << endl;
+        for(size_t i = nearest_right; i > child; i--)
+            rotate_left(i);
+        return true;
+    }
+    return false;
+}
+template<typename T>
+bool btree_node<T>::take_greatest(T& greatest){
+    if(is_leaf()){
+        _data_size--;
+        _d_check[_data_size]=false;
+        swap(greatest, _data[_data_size]);
+        return true;
+    }else{
+        _children[_data_size]->take_greatest(greatest);
+        if(_children[_data_size]->_data_size==0){
+            bool check = rotate_check(_data_size);
+            if(!check){
+                take_children(_data_size);
+            }
+        }
+        return true;
+    }
+}
+template<typename T>
+void btree_node<T>::take_children(size_t child){
+    if(DEBUG) cout << "Remove: Moving children into parent\n";
+    delete _children[child];
+    _children[child] = nullptr;
+    for(size_t i = child; i < _data_size+1; i++)
+        swap(_children[i], _children[i+1]);
+    for(btree_node<T>** w= _children; (*w) != nullptr; w++){
+        T d;
+//                            swap((*w)->_data[0], d);
+//                            cout << d << endl;
+        swap(_data[_data_size], (*w)->_data[0]);
+        _d_check[_data_size] = true;
+        for(int i = _data_size-1; i > 0; i--) //sort
+            if(_data[i] < _data[i-1])
+                swap(_data[i], _data[i-1]);
+            else
+                break;
+        _data_size++;
+        delete (*w);
+        (*w) = nullptr;
+    }
+}
+
 //--------- GENERAL FUNCTIONS ---------
 template<typename T>
 size_t btf::get_child(const T& input, T *data, const size_t size){
