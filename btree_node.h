@@ -5,6 +5,7 @@
 #define BTREE_NODE_H
 
 static const int DEBUG = 0; //1: debug 2: heavy-debug 3: ultra
+static bool DEBUG_FLAG = false;
 
 #include <vector>
 #include <cstdlib>
@@ -428,7 +429,8 @@ template<typename T>
 void btree_node<T>::rotate_right(size_t i){
 //    assert(_children[i]->_data_size > 1);
     if(_children[i]->_data_size <= 1){
-        cout << "BIG PROBLEM: CHILD TOO SMALL: " << *_children[i] << endl;
+        cout << "BIG PROBLEM: RR CHILD TOO SMALL: " << *_children[i] << endl;
+        DEBUG_FLAG = true;
     }
     //take largest data and move that one
     T d;
@@ -442,7 +444,8 @@ template<typename T>
 void btree_node<T>::rotate_left(size_t i){
 //    assert(_children[i]->_data_size > 1);
     if(_children[i]->_data_size <= 1){
-        cout << "BIG PROBLEM: CHILD TOO SMALL: " << *_children[i] << endl;
+        cout << "BIG PROBLEM: RL CHILD TOO SMALL: " << *_children[i] << endl;
+        DEBUG_FLAG = true;
     }
     //take smallest data and move that one
     T d;
@@ -461,6 +464,11 @@ bool btree_node<T>::rotate_check(size_t child){
     size_t nearest_right = child;
 //                cout << "Checking children: " << child << endl;
     for(size_t i = child+1; i < _data_size+1; i++){
+        if(_children[i]->_data_size<=0){
+            cout << "RotateCheck: NR Empty Child\n";
+//            rotate_check(i);
+            break;
+        }
         if(_children[i]->_data_size>1){
             nearest_right=i;
             break;
@@ -468,7 +476,11 @@ bool btree_node<T>::rotate_check(size_t child){
     }
     for(size_t i = 0; child-i>0; i++){
 //        cout << child-1-i << endl;
-
+        if(_children[child-1-i]->_data_size <= 0){
+            cout << "RotateCheck: NL empty child\n";
+//            rotate_check(child-1-i);
+            break;
+        }
         if(_children[child-1-i]->_data_size>1){
             nearest_left=child-1-i;
             break;
@@ -518,7 +530,7 @@ void btree_node<T>::take_children(size_t child){
 //                            cout << d << endl;
         swap(_data[_data_size], (*w)->_data[0]);
         _d_check[_data_size] = true;
-        for(int i = _data_size-1; i > 0; i--) //sort
+        for(int i = _data_size; i > 0; i--) //sort
             if(_data[i] < _data[i-1])
                 swap(_data[i], _data[i-1]);
             else
