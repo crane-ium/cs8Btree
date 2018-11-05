@@ -20,10 +20,7 @@ struct tester{
 };
 
 int get_rand(const int min, const int max);
-
-int main()
-{
-//    btree_node<int>* root = new btree_node<int>(2, false);
+void test_trees1(){
     using btr = BTree<int>;
     btr bt(4);
     int max = 0;
@@ -45,11 +42,57 @@ int main()
     bt2.insert(10);
     btr bt3 = bt2;
     bt3.insert(-99);
+    bt2.cleartree();
     cout << bt2 << endl;
     cout << "Size: " << bt2.size() << endl;
+    cout << "Valid? " << bt2.check_valid() << endl;
+    bt3.remove(-99);
     cout << bt3 << endl;
     cout << "Size: " << bt3.size() << endl;
+    cout << "Valid? " << bt3.check_valid() << endl;
     assert(bt.check_valid());
+}
+
+int main()
+{
+    //test_trees1();
+    btree_node<int>* root = new btree_node<int>(1, true);
+    root->insert(1);
+    root->insert(5);
+    root->insert(10);
+    root->reorganize_root(root);
+//    root->remove(5);
+    root->insert(15);
+    root->insert(20);
+    root->insert(7);
+    root->insert(25);
+    root->remove(5);
+    root->remove(7);
+    root->remove(20);
+    root->remove(10);
+    root->remove(15);
+//    root->remove(20);
+//    root->insert(25);
+//    root->insert(25);
+//    root->insert(25);
+//    root->insert(25);
+//    root->insert(25);
+//    root->remove(15);
+//    root->remove(20);
+//    root->remove(10);
+//    root->remove(1);
+//    root->remove(25);
+//    root->remove(1);
+//    root->remove(15);
+//    root->remove(5);
+//    root->remove(10);
+//    root->remove(20);
+//    root->remove(25);
+//    root->remove(0);
+//    root->remove(15);
+    root->print(cout, 0);
+//    btree_node<int>* root = new btree_node<int>(2, false);
+
 //    btree_node<tester>* root = new btree_node<tester>();
 //    (*root).insert(tester("a"));
 //    root->insert(tester("b"));

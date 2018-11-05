@@ -65,6 +65,7 @@ private:
     bool rotate_check(size_t child);
     void take_children(size_t child);
     bool take_greatest(T& greatest); //Removes greatest _data in _children[child] and returns
+    void parent_child_merge(size_t child);
 };
 namespace btf{
     template<typename T>
@@ -200,7 +201,17 @@ bool btree_node<T>::remove(const T& input){
             return true;
         }else{
             if(DEBUG) cout << "Taking greatest\n";
-            take_greatest(_data[i]);
+            _children[i]->take_greatest(_data[i]);
+            if(_children[i]->_data_size==0 && !rotate_check(i)){ //rotate or return false
+                if(DEBUG) cout << "Remove: Giving from parent\n";
+                if(_data_size > 1){
+                    parent_child_merge(i);
+                }else{
+                    //We must merge all children into parent
+                    //All children are of size 1
+                    take_children(i);
+                }
+            }
         }
 
         return true;
@@ -226,24 +237,7 @@ bool btree_node<T>::remove(const T& input){
                     if(DEBUG) cout << "Remove: Merging with parent\n";
                     //No children can offer. Merge _data[child] with right
                     if(_data_size > 1){
-                        T d;
-                        if(child < _data_size){
-                            swap(_data[child], d);
-                            for(size_t j = child; j < _data_size; j++)
-                                swap(_data[j], _data[j+1]);
-                            _d_check[_data_size-1] = false;
-                        }else
-                            swap(_data[child-1],d);
-                        _d_check[child]=false;
-                        if(child==_data_size)
-                            _children[child]->insert(d);
-                        else
-                            _children[child+1]->insert(d);
-                        delete _children[child];
-                        _children[child] = nullptr;
-                        for(size_t i = child; i < _data_size+1; i++)
-                            swap(_children[i], _children[i+1]);
-                        _data_size--;
+                        parent_child_merge(child);
                     }else{
                         //We must merge all children into parent
                         //All children are of size 1
@@ -525,6 +519,33 @@ void btree_node<T>::take_children(size_t child){
         delete (*w);
         (*w) = nullptr;
     }
+}
+template<typename T>
+void btree_node<T>::parent_child_merge(size_t child){
+    T d;
+    if(child < _data_size){
+        swap(_data[child], d);
+        for(size_t j = child; j < _data_size; j++)
+            swap(_data[j], _data[j+1]);
+        _d_check[_data_size-1] = false;
+    }else{
+        swap(_data[child-1],d);
+        _d_check[child-1] = false;
+    }
+//                        _d_check[child]=false;
+    if(DEBUG) cout << "child: " << child << endl;
+    if(child==_data_size){
+        _children[child-1]->insert(d);
+        delete _children[child];
+        _children[child] = nullptr;
+    }else{
+        _children[child+1]->insert(d);
+        delete _children[child];
+        _children[child] = nullptr;
+        for(size_t i = child; i < _data_size+1; i++)
+            swap(_children[i], _children[i+1]);
+    }
+    _data_size--;
 }
 
 //--------- GENERAL FUNCTIONS ---------
