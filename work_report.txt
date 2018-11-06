@@ -1,3 +1,14 @@
+https://github.com/crane-ium/cs8Btree
+BIG Issues:
+-Remove was implemented wrong. I am in version control fixing it...
+ -Might not be fixed in time. But it will be good for later anyways
+-No Iterator. Instead I used a function to give an array version of the tree
+-Big remove bug somewhere. Since remove was wrong anyways, it should be fixed
+ once remove() is fixed.
+ -This means verify is unable to verify properly. Until then, verify is
+  -commented out.
+-Set __head to non-static because of dynamic _min (sizes)
+
 Issues:
 -Set static __head with dynamic min/dupes??
 -Should there be a find function to find an array of duplicates? In the case that

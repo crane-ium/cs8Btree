@@ -421,8 +421,17 @@ bool btree_node<T>::check_validity() const{
         flag *= _d_check[i]; //boolean-and the data_check values;
     if(!(_children[0]))
         return flag;
-    for(size_t i = 0; i < _data_size+1; i++)
-        flag *= _children[i]->check_validity(); //recursively call
+    for(size_t i = 0; i < _data_size+1; i++){
+        if(i < _data_size)
+            try{
+//                if(_data[i] < _children[i]->_data[0])
+//                    return false;
+        }catch(...){
+            cout << "Validate failed, caught\n";
+            return false;
+        }
+        if(!_children[i]->check_validity()) return false; //recursively call
+    }
     return flag;
 }
 template<typename T>

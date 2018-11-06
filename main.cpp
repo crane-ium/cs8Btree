@@ -103,13 +103,13 @@ int main()
         srand(time(0));
         //------------------------------------------
 
-    manual_input_test();
+//    manual_input_test();
 //    recreate_bug();
     //    test_BTree_insert_random();
     //    test_BTree_remove();
     //    test_BTree_interactive();
     //    test_BTree_big_three();
-//        test_btree_auto(1000,1,false);
+        test_btree_auto(100,5,true);
 //    test_trees1();
     //    test_map();
     //    test_map_interactive();
@@ -316,8 +316,8 @@ bool test_btree_auto(int how_many, bool report){
         }
 
     }
-    if (report) cout<<" V A L I D    T R E E"<<endl;
-    cout << bpt << endl;
+    cout<<endl<<" V A L I D    T R E E"<<endl<<endl;
+//    cout << bpt << endl;
 
     return true;
 }
